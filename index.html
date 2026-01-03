@@ -263,6 +263,7 @@
     }
 
     function renderTable(machineId) {
+        // ลำดับเวลาในตาราง (6 โมงเช้า ถึง ตี 5 ของอีกวัน)
         const hours = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5];
         
         const today = new Date();
@@ -275,18 +276,33 @@
         hours.forEach(h => { html += `<th>${h}:00</th>`; });
         html += '</tr></thead><tbody>';
         
+        // วนลูป 7 วัน
         for (let i = 0; i < 7; i++) {
-            let date = new Date(today);
-            date.setDate(today.getDate() + i); 
+            let dateObj = new Date(today);
+            dateObj.setDate(today.getDate() + i); 
             
-            let dayNum = date.getDate(); 
-            let monthIndex = date.getMonth(); 
-            let dayStr = `${dayNum} ${monthsTH[monthIndex]}`; 
+            let rowDayNum = dateObj.getDate(); // วันที่ของแถวนี้ (เช่น 8)
+            let monthIndex = dateObj.getMonth();
+            let dayStr = `${rowDayNum} ${monthsTH[monthIndex]}`;
 
             html += `<tr><td style="font-weight:500; color:var(--text-main); white-space:nowrap;">${dayStr}</td>`;
             
             hours.forEach(h => {
-                const slotId = `${dayNum}-${h}`;
+                // --- LOGIC แก้ไขใหม่ตรงนี้ ---
+                // ถ้าเป็นเวลา 0, 1, 2, 3, 4, 5 มันคือเวลาของ "วันพรุ่งนี้"
+                // ดังนั้นเราต้องเช็คข้อมูลของ rowDayNum + 1
+                
+                let checkDate = rowDayNum;
+                if (h >= 0 && h <= 5) {
+                    checkDate = rowDayNum + 1;
+                    
+                    // (Optional) ถ้าวันเกินสิ้นเดือน Logic จะซับซ้อนขึ้นเล็กน้อย 
+                    // แต่ในที่นี้เราใช้เลขวันที่ดิบๆ จาก Google Sheet 
+                    // ดังนั้นถ้า Sheet บันทึกเป็น 32 (จากสคริปต์ข้อ 1) ก็จะแมตช์กันพอดี
+                }
+
+                const slotId = `${checkDate}-${h}`; // สร้าง ID เป็น "วันที่-เวลา"
+                
                 const isOccupied = bookings[machineId] && bookings[machineId].includes(slotId);
                 const className = isOccupied ? 'occupied' : 'available';
                 const text = isOccupied ? 'เต็ม' : ''; 
@@ -297,6 +313,8 @@
         
         html += '</tbody></table>';
         document.getElementById('scheduleGrid').innerHTML = html;
+        // ใส่ class loaded เพื่อให้ CSS จัดหน้า
+        document.getElementById('scheduleGrid').classList.add('loaded');
     }
 
     function switchTab(machineId) {
