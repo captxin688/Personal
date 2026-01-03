@@ -4,156 +4,122 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal Queue</title>
+    <link rel="icon" href="https://media.discordapp.net/attachments/1444720077483282455/1456736451634139267/Personal_8.png?ex=695a1bca&is=6958ca4a&hm=ce01c1ecc62a992862c8dc95557e304086b8179c1cbce22ec2ad46e67f86a57c&=&format=webp&quality=lossless">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Dark Theme Colors */
             --border-color: rgba(255, 255, 255, 0.1);
             --text-main: #ffffff;
             --text-muted: #aaaaaa;
-            --accent-color: #3b82f6; /* Neon Blue */
-            
+            --accent-color: #3b82f6; 
             --slot-bg: rgba(255, 255, 255, 0.05);
             --slot-occupied-bg: #B5251A; 
         }
 
         body {
             font-family: 'Kanit', sans-serif;
-            margin: 0;
-            padding: 40px 20px;
-            color: var(--text-main);
-            min-height: 100vh;
-            background-color: #000000;
-            overflow-x: hidden;
-            display: flex;
-            flex-direction: column;
+            margin: 0; padding: 40px 20px;
+            color: var(--text-main); min-height: 100vh; background-color: #000000;
+            overflow-x: hidden; display: flex; flex-direction: column;
         }
 
         #effectsCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
 
         .container {
             max-width: 1100px; margin: 0 auto; position: relative; z-index: 10;
-            background: rgba(20, 20, 20, 0.75); 
-            backdrop-filter: blur(12px);
-            padding: 40px;
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            width: 100%; box-sizing: border-box;
+            background: rgba(20, 20, 20, 0.75); backdrop-filter: blur(12px);
+            padding: 40px; border-radius: 16px; border: 1px solid var(--border-color);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); width: 100%; box-sizing: border-box;
         }
 
+        /* Header & Logo */
         header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); }
-        .main-logo { max-width: 250px; height: auto; margin-bottom: 10px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); display: block; margin-left: auto; margin-right: auto; }
-        .subtitle { color: var(--accent-color); font-size: 18px; font-weight: 300; text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+        .main-logo { max-width: 250px; height: auto; margin-bottom: 15px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); display: block; margin-left: auto; margin-right: auto; }
 
+        /* --- ปุ่มสเปคและราคา (ใหม่) --- */
+        .btn-specs {
+            background: transparent;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 8px 24px;
+            border-radius: 30px;
+            font-family: 'Kanit', sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-specs:hover {
+            background: var(--accent-color);
+            color: white;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+        }
+
+        /* --- Modal Popup (สำหรับรูปภาพ) --- */
+        .modal {
+            display: none; /* ซ่อนไว้ก่อน */
+            position: fixed; 
+            z-index: 999; 
+            left: 0; top: 0;
+            width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.9); /* พื้นหลังดำโปร่งแสง */
+            backdrop-filter: blur(5px);
+            overflow: auto;
+        }
+        
+        .modal-content {
+            margin: 5% auto;
+            display: block;
+            width: 90%;
+            max-width: 700px; /* ขนาดรูปสูงสุด */
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+            animation: zoomIn 0.3s ease;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px; right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        .close-modal:hover { color: var(--accent-color); }
+
+        @keyframes zoomIn {
+            from {transform:scale(0.8); opacity:0} 
+            to {transform:scale(1); opacity:1}
+        }
+
+        /* Tabs & Schedule */
         .tabs { display: flex; justify-content: center; margin-bottom: 30px; gap: 15px; }
         .tab-btn { padding: 12px 35px; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.05); color: var(--text-muted); cursor: pointer; border-radius: 8px; font-family: 'Kanit', sans-serif; font-size: 16px; font-weight: 400; transition: all 0.3s ease; }
         .tab-btn:hover { background: rgba(255, 255, 255, 0.1); color: white; }
         .tab-btn.active { background: var(--accent-color); color: white; border-color: var(--accent-color); box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); font-weight: 500; }
 
-        /* Schedule Grid Container */
         .schedule-container {
-            overflow-x: auto;
-            border-radius: 8px;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 10px;
-            min-height: 60vh; /* ความสูงขณะโหลด */
-            width: 100%;
-            box-sizing: border-box;
-            
-            /* จัด Loading ให้อยู่กึ่งกลาง */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            overflow-x: auto; border-radius: 8px; background: rgba(0, 0, 0, 0.3); padding: 10px; min-height: 60vh; width: 100%; box-sizing: border-box;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
-        
-        .schedule-container.loaded {
-            display: block;
-            justify-content: flex-start;
-            min-height: auto; 
-        }
+        .schedule-container.loaded { display: block; justify-content: flex-start; min-height: auto; }
 
-        /* --- New Radar Loading Effect --- */
-        .radar-loader {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            margin-bottom: 20px;
-        }
-
-        .radar-ring {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 2px solid var(--accent-color);
-            box-shadow: 0 0 10px var(--accent-color); /* เรืองแสง */
-            opacity: 0;
-            animation: radar-wave 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
-        }
-
-        /* Delay เพื่อให้มันขยายตัวเหลื่อมกัน */
+        .radar-loader { position: relative; width: 100px; height: 100px; margin-bottom: 20px; }
+        .radar-ring { position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--accent-color); box-shadow: 0 0 10px var(--accent-color); opacity: 0; animation: radar-wave 2s cubic-bezier(0, 0.2, 0.8, 1) infinite; }
         .radar-ring:nth-child(2) { animation-delay: -0.6s; }
         .radar-ring:nth-child(3) { animation-delay: -1.2s; }
+        .radar-core { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 15px; height: 15px; background: var(--accent-color); border-radius: 50%; box-shadow: 0 0 15px var(--accent-color); animation: pulse-core 2s infinite; }
+        @keyframes radar-wave { 0% { top: 50%; left: 50%; width: 0; height: 0; opacity: 1; border-width: 2px; } 100% { top: 0; left: 0; width: 100%; height: 100%; opacity: 0; border-width: 0px; } }
+        @keyframes pulse-core { 0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; } 50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; } }
+        .loading-text { text-align: center; color: var(--text-main); font-size: 18px; font-weight: 300; letter-spacing: 1px; opacity: 0.8; }
 
-        /* จุดตรงกลาง */
-        .radar-core {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 15px; height: 15px;
-            background: var(--accent-color);
-            border-radius: 50%;
-            box-shadow: 0 0 15px var(--accent-color);
-            animation: pulse-core 2s infinite;
-        }
-
-        @keyframes radar-wave {
-            0% {
-                top: 50%; left: 50%;
-                width: 0; height: 0;
-                opacity: 1;
-                border-width: 2px;
-            }
-            100% {
-                top: 0; left: 0;
-                width: 100%; height: 100%;
-                opacity: 0;
-                border-width: 0px;
-            }
-        }
-
-        @keyframes pulse-core {
-            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
-            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
-        }
-
-        .loading-text { 
-            text-align: center; 
-            color: var(--text-main); 
-            font-size: 18px; 
-            font-weight: 300;
-            letter-spacing: 1px;
-            opacity: 0.8;
-        }
-
-        /* --- Scroll Hint --- */
-        .scroll-hint {
-            display: none; 
-            text-align: center;
-            font-size: 12px;
-            color: var(--accent-color);
-            margin-bottom: 5px;
-            animation: pulse 2s infinite;
-        }
+        .scroll-hint { display: none; text-align: center; font-size: 12px; color: var(--accent-color); margin-bottom: 5px; animation: pulse 2s infinite; }
         @media (max-width: 768px) { .scroll-hint { display: block; } }
-        @keyframes pulse {
-            0% { opacity: 0.6; transform: translateX(0); }
-            50% { opacity: 1; transform: translateX(5px); }
-            100% { opacity: 0.6; transform: translateX(0); }
-        }
+        @keyframes pulse { 0% { opacity: 0.6; transform: translateX(0); } 50% { opacity: 1; transform: translateX(5px); } 100% { opacity: 0.6; transform: translateX(0); } }
 
         .schedule-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .legend { display: flex; gap: 20px; font-size: 14px; color: var(--text-muted); }
@@ -192,10 +158,19 @@
 
 <canvas id="effectsCanvas"></canvas>
 
+<div id="specModal" class="modal">
+    <span class="close-modal" onclick="closeModal()">&times;</span>
+    <img class="modal-content" src="https://media.discordapp.net/attachments/1455845470646702244/1456606102681817303/Personal_3.png?ex=6959a265&is=695850e5&hm=c5accf84a83cb7d5a0f83984ec95da0f92c0c7656ef78300e51c93853b1a0eff&=&format=webp&quality=lossless" alt="Specs and Price">
+</div>
+
 <div class="container">
     <header>
         <img src="https://media.discordapp.net/attachments/1444720077483282455/1456736451634139267/Personal_8.png?ex=6959730a&is=6958218a&hm=53400b627a532d2eb0253915ac5e032f512628af8f0fb40233016aa890f25613&=&format=webp&quality=lossless" alt="Logo" class="main-logo">
-        <div class="subtitle">9800X3D + RTX 5060 + RAM32GB DDR5 BUS6000🚀</div>
+        
+        <button class="btn-specs" onclick="openModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            สเปคและราคา
+        </button>
     </header>
 
     <div class="tabs">
@@ -332,6 +307,25 @@
             else btn.classList.remove('active');
         });
         renderTable(machineId);
+    }
+
+    // Modal Control Functions
+    function openModal() {
+        const modal = document.getElementById('specModal');
+        modal.style.display = 'block';
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('specModal');
+        modal.style.display = 'none';
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('specModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
     }
 
     fetchBookings();
